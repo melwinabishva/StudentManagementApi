@@ -1,5 +1,9 @@
 package model;
 
+import java.io.IOException;
+
+import javax.servlet.http.HttpServletResponse;
+
 import org.bson.Document;
 
 import com.mongodb.BasicDBObject;
@@ -8,9 +12,13 @@ import com.mongodb.MongoException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
+import controller.StudentServices;
+
 public class StudentRepositary {
 
 	private MongoCollection<Document> collection;
+	Student student;
+	StudentServices studentService;
 
 	public StudentRepositary() {
 
@@ -50,6 +58,30 @@ public class StudentRepositary {
 
 		}
 
+	}
+	
+	public Student getStudentById(int studentId,HttpServletResponse resp) throws IOException {
+		
+		
+		Document query = new Document ("id",studentId);
+		
+		Document result= collection.find(query).first();
+		System.out.println(result);
+		
+			
+			int id=result.getInteger("id");
+			String name=result.getString("name");
+			int age=result.getInteger("age");
+		
+		return new Student(id,name,age);
+		
+		
+	
+		
+		
+		
+		
+		
 	}
 
 }
