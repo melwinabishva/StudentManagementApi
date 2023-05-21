@@ -3,6 +3,7 @@ package controller;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -44,9 +45,8 @@ public class StudentServices extends HttpServlet {
 			if (pathParts.length >= 2) {
 				String studentId = pathParts[1];
 
-				
 				int id = Integer.parseInt(studentId);
-				
+
 				boolean studentExist = studentRepository.checkIfStudentExists(id);
 				if (!studentExist) {
 					resp.setStatus(HttpServletResponse.SC_CONFLICT);
@@ -65,7 +65,17 @@ public class StudentServices extends HttpServlet {
 					resp.getWriter().write(json);
 				}
 			} else {
-				sendErrorResponse(resp, "Invalid URL path");
+//				sendErrorResponse(resp, "Invalid URL path");
+
+				// Convert the student list to JSON
+				List<Student> students = studentRepository.getAllStudents();
+				Gson gson = new Gson();
+				String json = gson.toJson(students);
+
+				// Send the JSON response
+				resp.setContentType("application/json");
+				resp.getWriter().write(json);
+
 			}
 
 		} catch (IOException e) {
@@ -74,11 +84,10 @@ public class StudentServices extends HttpServlet {
 			resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			resp.getWriter().write("internal sever error occurred");
 
-		}catch(NumberFormatException e) {
+		} catch (NumberFormatException e) {
 			sendErrorResponse(resp, "Enter valid number");
-            return;
+			return;
 
-			
 		}
 
 	}
@@ -124,13 +133,100 @@ public class StudentServices extends HttpServlet {
 
 	@Override
 	public void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-		System.out.println("put");
+
+		try {
+			String pathInfo = req.getPathInfo();
+			if (pathInfo == null || pathInfo.isEmpty()) {
+				sendErrorResponse(resp, "Missing Student ID");
+				return;
+			}
+
+			String[] pathParts = pathInfo.split("/");
+
+			if (pathParts.length >= 2) {
+
+				String studentId = pathParts[1];
+				int id = Integer.parseInt(studentId);
+
+				boolean studentExist = studentRepository.checkIfStudentExists(id);
+				if (!studentExist) {
+					resp.setStatus(HttpServletResponse.SC_CONFLICT);
+					resp.getWriter().write("Student ID not available");
+				} else {
+					// Retrieve the updated student information from the request body
+					BufferedReader reader = req.getReader();
+					StringBuilder requestBody = new StringBuilder();
+					String line;
+					while ((line = reader.readLine()) != null) {
+						requestBody.append(line);
+					}
+					// Convert the JSON request body to a Student object
+					Gson gson = new Gson();
+					Student updatedStudent = gson.fromJson(requestBody.toString(), Student.class);
+
+					// Update the student in MongoDB
+					studentRepository.updateStudent(id, updatedStudent);
+
+					resp.setStatus(HttpServletResponse.SC_OK);
+					resp.getWriter().write("Student updated successfully");
+				}
+			} else {
+				sendErrorResponse(resp, "Invalid URL path");
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+			resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			resp.getWriter().write("Internal server error occurred");
+		} catch (NumberFormatException e) {
+			sendErrorResponse(resp, "Enter a valid number");
+			return;
+		}
+
 	}
 
 	@Override
 	public void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-		System.out.println("delete");
+		try {
+		    // Get the student id from the URL path
+		    String pathInfo = req.getPathInfo();
+
+		    if (pathInfo == null || pathInfo.isEmpty()) {
+		        sendErrorResponse(resp, "Missing Student ID");
+		        return;
+		    }
+
+		    String[] pathParts = pathInfo.split("/");
+
+		    if (pathParts.length >= 2) {
+		        String studentId = pathParts[1];
+
+		        int id = Integer.parseInt(studentId);
+
+		        boolean studentExist = studentRepository.checkIfStudentExists(id);
+		        if (!studentExist) {
+		            resp.setStatus(HttpServletResponse.SC_CONFLICT);
+		            resp.getWriter().write("Student ID not available");
+		        } else {
+		            // Delete the student from MongoDB
+		            studentRepository.deleteStudent(id);
+
+		            resp.setStatus(HttpServletResponse.SC_OK);
+		            resp.getWriter().write("Student deleted successfully");
+		        }
+		    } else {
+		        sendErrorResponse(resp, "Invalid URL path");
+		    }
+
+		} catch (IOException e) {
+		    e.printStackTrace();
+		    resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		    resp.getWriter().write("Internal server error occurred");
+		} catch (NumberFormatException e) {
+		    sendErrorResponse(resp, "Enter a valid number");
+		    return;
+		}
 	}
 
 	public void sendErrorResponse(HttpServletResponse resp, String message) throws IOException {
