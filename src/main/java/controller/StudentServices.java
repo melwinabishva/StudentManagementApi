@@ -30,7 +30,56 @@ public class StudentServices extends HttpServlet {
 	@Override
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-		System.out.println("get");
+		try {
+			// get the student id from the url path
+			String pathInfo = req.getPathInfo();
+
+			if (pathInfo == null || pathInfo.isEmpty()) {
+				sendErrorResponse(resp, "Missing Student id");
+
+				return;
+			}
+			String[] pathParts = pathInfo.split("/");
+
+			if (pathParts.length >= 2) {
+				String studentId = pathParts[1];
+
+				
+				int id = Integer.parseInt(studentId);
+				
+				boolean studentExist = studentRepository.checkIfStudentExists(id);
+				if (!studentExist) {
+					resp.setStatus(HttpServletResponse.SC_CONFLICT);
+					resp.getWriter().write("Student  ID not Available");
+				} else {
+
+					// Reterive the student information form the database
+					Student student = studentRepository.getStudentById(id, resp);
+
+					// convert the student object to JSON
+					Gson gson = new Gson();
+					String json = gson.toJson(student);
+
+					// send the Json response
+					resp.setContentType("application/json");
+					resp.getWriter().write(json);
+				}
+			} else {
+				sendErrorResponse(resp, "Invalid URL path");
+			}
+
+		} catch (IOException e) {
+
+			e.printStackTrace();
+			resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			resp.getWriter().write("internal sever error occurred");
+
+		}catch(NumberFormatException e) {
+			sendErrorResponse(resp, "Enter valid number");
+            return;
+
+			
+		}
 
 	}
 
@@ -82,6 +131,12 @@ public class StudentServices extends HttpServlet {
 	public void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
 		System.out.println("delete");
+	}
+
+	public void sendErrorResponse(HttpServletResponse resp, String message) throws IOException {
+		resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+		resp.setContentType("text/plain");
+		resp.getWriter().write(message);
 	}
 
 }
