@@ -57,25 +57,24 @@ public class StudentServices extends HttpServlet {
 					Student student = studentRepository.getStudentById(id, resp);
 
 					// convert the student object to JSON
-					Gson gson = new Gson();
-					String json = gson.toJson(student);
+//					Gson gson = new Gson();
+//					String json = gson.toJson(student);
+					
+					sendJsonResponse(resp, student);
 
-					// send the Json response
-					resp.setContentType("application/json");
-					resp.getWriter().write(json);
+				
 				}
 			} else {
 //				sendErrorResponse(resp, "Invalid URL path");
 
 				// Convert the student list to JSON
 				List<Student> students = studentRepository.getAllStudents();
-				Gson gson = new Gson();
-				String json = gson.toJson(students);
+//				Gson gson = new Gson();
+//				String json = gson.toJson(students);
+				
+				sendJsonResponse(resp, students);
 
-				// Send the JSON response
-				resp.setContentType("application/json");
-				resp.getWriter().write(json);
-
+				
 			}
 
 		} catch (IOException e) {
@@ -114,8 +113,9 @@ public class StudentServices extends HttpServlet {
 			boolean studentExist = studentRepository.checkIfStudentExists(newStudent.getId());
 
 			if (studentExist) {
-				resp.setStatus(HttpServletResponse.SC_CONFLICT);
-				resp.getWriter().write("Student  ID already exists");
+				
+				sendErrorResponse(resp,"Student  ID already exists");
+				return;
 			} else {
 				// Insert the new student into database
 				studentRepository.addStudent(newStudent);
@@ -150,8 +150,9 @@ public class StudentServices extends HttpServlet {
 
 				boolean studentExist = studentRepository.checkIfStudentExists(id);
 				if (!studentExist) {
-					resp.setStatus(HttpServletResponse.SC_CONFLICT);
-					resp.getWriter().write("Student ID not available");
+					
+					sendErrorResponse(resp, "student Id not available");
+					return;
 				} else {
 					// Retrieve the updated student information from the request body
 					BufferedReader reader = req.getReader();
@@ -206,8 +207,10 @@ public class StudentServices extends HttpServlet {
 
 		        boolean studentExist = studentRepository.checkIfStudentExists(id);
 		        if (!studentExist) {
-		            resp.setStatus(HttpServletResponse.SC_CONFLICT);
-		            resp.getWriter().write("Student ID not available");
+//		            resp.setStatus(HttpServletResponse.SC_CONFLICT);
+//		            resp.getWriter().write("Student ID not available");
+		        	
+		        	sendErrorResponse(resp, "Student ID not available");
 		        } else {
 		            // Delete the student from MongoDB
 		            studentRepository.deleteStudent(id);
@@ -233,6 +236,14 @@ public class StudentServices extends HttpServlet {
 		resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 		resp.setContentType("text/plain");
 		resp.getWriter().write(message);
+	}
+	
+	public void sendJsonResponse(HttpServletResponse resp,Object data) throws IOException {
+		Gson gson=new Gson();
+		String json=gson.toJson(data);
+		
+		resp.setContentType("application/json");
+		resp.getWriter().write(json);
 	}
 
 }
