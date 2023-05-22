@@ -31,5 +31,6 @@
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
 	<classpathentry kind="lib" path="/Users/user/Downloads/mongo-java-driver-2.13.3-sources.jar"/>
 	<classpathentry kind="lib" path="/Users/user/Downloads/mongodb-driver-sync-4.9.1-sources.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

@@ -1,11 +1,13 @@
 package model;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 
 import javax.servlet.http.HttpServletResponse;
 
 import org.bson.Document;
 
+import com.google.gson.Gson;
 import com.mongodb.BasicDBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
@@ -13,14 +15,15 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import java.util.List;
+import java.util.UUID;
 import java.util.ArrayList;
 import controller.StudentServices;
 
 public class StudentRepositary {
 
 	private MongoCollection<Document> collection;
-	Student student;
-	StudentServices studentService;
+	private Student student;
+	private StudentServices studentService;
 
 	public StudentRepositary() {
 
@@ -42,23 +45,52 @@ public class StudentRepositary {
 
 		// check the id is matching in db
 		Document result = collection.find(query).first();
-
-		return result != null;
+		if (result!=null) {
+			return true;
+		} else {
+        return false;
+		}
+//		return result;
 
 	}
 
-	public void addStudent(Student student) {
+	public void addStudent(Gson gson, Student student,HttpServletResponse resp) throws IOException {
 
 		try {
-
+			
+          Document lastStuentDocument=collection.find().sort(new Document("id",-1)).limit(1).first();
+			
+            int lastId=0;
+            
+            if(lastStuentDocument !=null) {
+          	  lastId=lastStuentDocument.getInteger("id");
+            }
+            int nextId=lastId+1;
+            
+            //Generate the UUID 
+            UUID generatedUUID=UUID.randomUUID();
+            
+            
+            //change the format
+            int formattedId=nextId;
+            
+            student.setId(formattedId);
+              
+              
 			Document studentDocument = new Document("id", student.getId()).append("name", student.getName())
 					.append("age", student.getAge());
 
 			collection.insertOne(studentDocument);
+			Student insertedStudent = gson.fromJson(studentDocument.toJson(), Student.class);
+			 PrintWriter writer = resp.getWriter();
+		        writer.println(gson.toJson(insertedStudent));
+			
+//			return studentDocument;
 		} catch (MongoException e) {
 			e.printStackTrace();
 
 		}
+		
 
 	}
 
@@ -98,7 +130,7 @@ public class StudentRepositary {
         return new Student(id, name, age);
     }
 
-	public void updateStudent(int id, Student updatedStudent) {
+	public void updateStudent(int id, Student updatedStudent, Gson gson,HttpServletResponse resp) throws IOException {
 		
 		Document fillter =new Document("id",id);
 		
@@ -106,6 +138,17 @@ public class StudentRepositary {
 			   .append("age", updatedStudent.getAge()));
 		collection.updateOne(fillter, updateQuery);
 		
+		Student insertedStudent = gson.fromJson(updateQuery.toJson(), Student.class);
+		
+		Document updatedDocument = collection.find(fillter).first();
+		
+		if(updatedDocument!=null) {
+		
+		 PrintWriter writer = resp.getWriter();
+	        writer.println(gson.toJson(insertedStudent));
+		}
+		
+//		
 	}
 
 	public void deleteStudent(int id) {
@@ -115,7 +158,8 @@ public class StudentRepositary {
 		collection.deleteOne(filter);
 		
 	}
-
+	
+	
 	
 
 }
